@@ -1,0 +1,76 @@
+import getRandomInt from "./getRandomInt.js";
+
+const words = [
+  "ad",
+  "adipisicing",
+  "aliqua",
+  "aliquip",
+  "amet",
+  "anim",
+  "aute",
+  "cillum",
+  "commodo",
+  "consectetur",
+  "consequat",
+  "culpa",
+  "cupidatat",
+  "deserunt",
+  "do",
+  "dolor",
+  "dolore",
+  "duis",
+  "ea",
+  "eiusmod",
+  "elit",
+  "enim",
+  "esse",
+  "est",
+  "et",
+  "eu",
+  "ex",
+  "excepteur",
+  "exercitation",
+  "fugiat",
+  "id",
+  "in",
+  "incididunt",
+  "ipsum",
+  "irure",
+  "labore",
+  "laboris",
+  "laborum",
+  "Lorem",
+  "magna",
+  "minim",
+  "mollit",
+  "nisi",
+  "non",
+  "nostrud",
+  "nulla",
+  "occaecat",
+  "officia",
+  "pariatur",
+  "proident",
+  "qui",
+  "quis",
+  "reprehenderit",
+  "sint",
+  "sit",
+  "sunt",
+  "tempor",
+  "ullamco",
+  "ut",
+  "velit",
+  "veniam",
+  "voluptate",
+];
+
+const randomLatin = (length) => {
+  let arr = [];
+  for (let index = 0; index < length; index++) {
+    arr.push(words[getRandomInt(0, words.length)]);
+  }
+  return arr.join(" ");
+};
+
+export default randomLatin;

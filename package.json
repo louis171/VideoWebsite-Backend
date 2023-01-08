@@ -1,0 +1,26 @@
+{
+  "name": "videowebsite",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon src/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@graphql-tools/mock": "^8.7.14",
+    "@graphql-tools/schema": "^9.0.12",
+    "nodemon": "^2.0.20",
+    "prisma": "^4.8.1"
+  },
+  "dependencies": {
+    "@apollo/server": "^4.3.0",
+    "@prisma/client": "^4.8.1",
+    "argon2": "^0.30.3",
+    "graphql": "^16.6.0",
+    "nanoid": "^4.0.0"
+  }
+}

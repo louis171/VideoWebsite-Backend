@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["metrics", "clientExtensions"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @db.VarChar(36)
+  email       String   @unique @db.VarChar(100)
+  username    String   @db.VarChar(100)
+  password    String   @db.VarChar(150)
+  description String?  @db.VarChar(200)
+  created     DateTime @default(now())
+  updated     DateTime @default(now()) @updatedAt
+  video       Video[]
+}
+
+model Video {
+  id       String    @id @db.VarChar(36)
+  views    Int       @default(0)
+  created  DateTime  @default(now())
+  updated  DateTime  @default(now()) @updatedAt
+  User     User      @relation(fields: [userId], references: [id])
+  userId   String    @db.VarChar(36)
+  tags     Tags?
+  heat     Heat?
+  paths    Paths?
+  metadata Metadata?
+}
+
+model Paths {
+  id      String   @id @db.VarChar(36)
+  hd      String   @db.VarChar(200)
+  thumb   String   @db.VarChar(200)
+  poster  String   @db.VarChar(200)
+  video   Video    @relation(fields: [videoId], references: [id])
+  videoId String   @unique @db.VarChar(36)
+  created DateTime @default(now())
+  updated DateTime @default(now()) @updatedAt
+}
+
+model Tags {
+  id      String   @id @db.VarChar(36)
+  tag1    String?  @db.VarChar(36)
+  tag2    String?  @db.VarChar(36)
+  tag3    String?  @db.VarChar(36)
+  tag4    String?  @db.VarChar(36)
+  tag5    String?  @db.VarChar(36)
+  video   Video    @relation(fields: [videoId], references: [id])
+  videoId String   @unique @db.VarChar(36)
+  created DateTime @default(now())
+  updated DateTime @default(now()) @updatedAt
+}
+
+model Heat {
+  id          String   @id @db.VarChar(36)
+  temperature Int      @default(0)
+  spotlight   Boolean  @default(false)
+  video       Video    @relation(fields: [videoId], references: [id])
+  videoId     String   @unique @db.VarChar(36)
+  created     DateTime @default(now())
+  updated     DateTime @default(now()) @updatedAt
+}
+
+model Metadata {
+  id       String   @id @db.VarChar(36)
+  width    Int      @default(0)
+  height   Int      @default(0)
+  duration Decimal  @default(0.0) @db.Decimal(5, 3)
+  hasAudio Boolean  @default(false)
+  video    Video    @relation(fields: [videoId], references: [id])
+  videoId  String   @unique @db.VarChar(36)
+  created  DateTime @default(now())
+  updated  DateTime @default(now()) @updatedAt
+}
+
+model SystemTags {
+  id      String   @id @db.VarChar(36)
+  name    String   @db.VarChar(20)
+  created DateTime @default(now())
+  updated DateTime @default(now()) @updatedAt
+}
