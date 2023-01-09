@@ -3,6 +3,9 @@ import { startStandaloneServer } from "@apollo/server/standalone";
 import { Prisma, PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
+import * as argon2 from "argon2";
+import { nanoid } from "nanoid";
+
 const prismax = prisma.$extends({
   client: {
     $log: (s) => console.log(s),
@@ -34,138 +37,6 @@ async function main() {
 
 // import seedDatabase from "./seed/seedDatabase.js";
 // seedDatabase();
-
-// const typeDefs = `#graphql
-
-//   # Comments in GraphQL strings (such as this one) start with the hash (#) symbol.
-
-//   # This "User" type defines the queryable fields for every user in our data source.
-//   type User {
-//     id: String
-//     email: String
-//     username: String
-//     password: String
-//     description: String
-//     created: String
-//     updated: String
-//     videos: [Video]
-//   }
-
-//   type Video {
-//     id: String
-//     views: Int
-//     created: String
-//     updated: String
-//     paths: Paths
-//     tags: [String]
-//     heat: Heat
-//     metadata: Metadata
-//   }
-
-//   type Paths {
-//     id: String
-//     hd: String
-//     thumb: String
-//     poster: String
-//     created: String
-//     updated: String
-//     videoId: String
-//   }
-
-//   # type Tags {
-//   #   id: String
-//   #   tag1: String
-//   #   tag2: String
-//   #   tag3: String
-//   #   tag4: String
-//   #   tag5: String
-//   #   created: String
-//   #   updated: String
-//   #   videoId: String
-//   # }
-
-//   type Tags {
-//     tag: String
-//   }
-
-// type Heat {
-//   id: String
-//   temperature: Int
-//   spotlight: Boolean
-//   created: String
-//   updated: String
-//   videoId: String
-// }
-
-// type Metadata {
-//   id: String
-//   width: Int
-//   height: Int
-//   duration: Float
-//   hasAudio: Boolean
-//   created: String
-//   updated: String
-//   videoId: String
-// }
-
-//   # The "Query" type is special: it lists all of the available queries that
-//   # clients can execute, along with the return type for each. In this
-//   # case, the "books" query returns an array of zero or more Books (defined above).
-//   type Query {
-//     getUser(id: ID!): User
-//     getUserVideos(id: ID!): User
-//   }
-
-//   type Query {
-//     getVideo(id: ID!): Video
-//   }
-// `;
-
-// // Resolvers define how to fetch the types defined in your schema.
-// // This resolver retrieves books from the "books" array above.
-// const resolvers = {
-//   Query: {
-//     getUser: async (parent, args, contextValue, info) => {
-//       let retVal = await prisma.user.findUnique({
-//         where: {
-//           id: args.id,
-//         },
-//         include: {
-//           video: {
-//             include: {
-//               heat: true,
-//               metadata: true,
-//               paths: true,
-//               tags: true,
-//             },
-//           },
-//         },
-//       });
-//       for (const video of retVal.video.filter((n) => n)) {
-//         await getTagsFromJSON(video);
-//       }
-//       return retVal;
-//     },
-//     // Gets video by id. Includes:
-//     // video, paths, tags, heat and metadata
-//     // tags are converted from id to name
-//     getVideo: async (parent, args, contextValue, info) => {
-//       let retVal = await prisma.video.findUnique({
-//         where: {
-//           id: args.id,
-//         },
-//         include: {
-//           paths: true,
-//           tags: true,
-//           heat: true,
-//           metadata: true,
-//         },
-//       });
-//       await getTagsFromJSON(retVal);
-//       return retVal;
-//     },
-//   },
-// };
 
 // Schema definition
 const typeDefs = `#graphql
@@ -233,6 +104,11 @@ const typeDefs = `#graphql
     getVideoByUser(id: ID!): User
     getVideoById(id: ID!): Video
   }
+
+  type Mutation {
+    upsertUser(id: ID!, email: String!, username: String!, password: String!, description: String): User
+	}
+
 `;
 
 // Resolver map
@@ -257,6 +133,20 @@ const resolvers = {
       });
       return retVal;
     },
+    getVideoById: async (parent, args, contextValue, info) => {
+      let retVal = await prisma.video.findUnique({
+        where: {
+          id: args.id,
+        },
+        include: {
+          heat: true,
+          metadata: true,
+          paths: true,
+          tags: true,
+        },
+      });
+      return retVal;
+    },
   },
   User: {
     videos(parent, args, contextValue, info) {
@@ -265,8 +155,7 @@ const resolvers = {
     },
   },
   Video: {
-    // Additional resolvers to return paths, tags, heat and metadata related to the video
-    // objects that are resolved above
+    // Additional resolvers to return paths, tags, heat and metadata for videos
     paths(parent, args, contextValue, info) {
       return parent.paths;
     },
@@ -302,18 +191,30 @@ const resolvers = {
       return parent.metadata;
     },
   },
-
-  Query: {
-    getVideoById: async (parent, args, contextValue, info) => {
-      let retVal = await prisma.video.findUnique({
+  Mutation: {
+    upsertUser: async (parent, args, contextValue, info) => {
+      let hashPassword = "";
+      try {
+        hashPassword = await argon2.hash(args.password);
+      } catch (e) {
+        console.error(e);
+      }
+      let retVal = await prisma.user.upsert({
         where: {
           id: args.id,
         },
-        include: {
-          heat: true,
-          metadata: true,
-          paths: true,
-          tags: true,
+        update: {
+          email: args.email,
+          username: args.username,
+          password: hashPassword,
+          description: args.description,
+        },
+        create: {
+          id: nanoid(36),
+          email: args.email,
+          password: hashPassword,
+          username: args.username,
+          description: args.description,
         },
       });
       return retVal;
