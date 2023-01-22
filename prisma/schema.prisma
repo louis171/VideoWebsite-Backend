@@ -12,14 +12,25 @@ datasource db {
 }
 
 model User {
-  id          String   @id @db.VarChar(36)
-  email       String   @unique @db.VarChar(100)
-  username    String   @db.VarChar(100)
-  password    String   @db.VarChar(150)
-  description String?  @db.VarChar(200)
-  created     DateTime @default(now())
-  updated     DateTime @default(now()) @updatedAt
+  id          String     @id @db.VarChar(36)
+  email       String     @unique @db.VarChar(100)
+  username    String     @db.VarChar(100)
+  password    String     @db.VarChar(150)
+  description String?    @db.VarChar(200)
+  paths       UserPaths?
+  created     DateTime   @default(now())
+  updated     DateTime   @default(now()) @updatedAt
   video       Video[]
+}
+
+model UserPaths {
+  id      String   @id @db.VarChar(36)
+  thumb   String?  @db.VarChar(200)
+  poster  String?  @db.VarChar(200)
+  User    User     @relation(fields: [userId], references: [id])
+  userId  String   @unique @db.VarChar(36)
+  created DateTime @default(now())
+  updated DateTime @default(now()) @updatedAt
 }
 
 model Video {

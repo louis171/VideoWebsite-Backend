@@ -38,186 +38,188 @@ async function main() {
 // import seedDatabase from "./seed/seedDatabase.js";
 // seedDatabase();
 
+const FeedVideos = {
+  // 'trending' is defined by videoes that have a 'temperature' of 7 or greater
+  trending: [
+    {
+      id: "4VwZedQaqoM4hFOl3K2aE5uq9Cp5jjgqthmd",
+      views: 3288,
+      created: "1673111482116",
+      paths: {
+        hd: "https://api.videowebsite/api/video/hollowcast602.m4v",
+        thumb: "https://api.videowebsite/api/video/hollowcast602-thumb.png",
+        poster: "https://api.videowebsite/api/video/hollowcast6021.png",
+      },
+      tags: ["House", "Holiday", "Landscape", "Car", "Holiday"],
+      metadata: {
+        width: 552,
+        height: 1666,
+        duration: 25.708,
+        hasAudio: true,
+      },
+    },
+  ],
+  // 'latest' is defined by videos that have been created in the last 24 hours
+  latest: [
+    {
+      id: "nSKREsZXZxAvL20o64lGZqp3shrhxDun2vbf",
+      views: 3188,
+      created: "1673111383945",
+      paths: {
+        hd: "https://api.videowebsite/api/video/probablysense125.m4v",
+        thumb: "https://api.videowebsite/api/video/probablysense125-thumb.png",
+        poster: "https://api.videowebsite/api/video/probablysense1251.png",
+      },
+      tags: ["Landscape", "Fashion", "Dance", "Trending", "Landscape"],
+      metadata: {
+        width: 816,
+        height: 1192,
+        duration: 24.866,
+        hasAudio: true,
+      },
+    },
+  ],
+  // 'spotlight' is defined by videos that have mainted a 'temperature' of 7 or greater
+  // for more than 7 days
+  spotlight: [
+    {
+      id: "edbzDKw3iSFAHE2NsJHbVugA8ywZL4xuXqDy",
+      views: 7301,
+      created: "1673111428288",
+      paths: {
+        hd: "https://api.videowebsite/api/video/industryfield375.m4v",
+        thumb: "https://api.videowebsite/api/video/industryfield375-thumb.png",
+        poster: "https://api.videowebsite/api/video/industryfield3751.png",
+      },
+      tags: ["Holiday", "Car", "Holiday", "Art", "Landscape"],
+      metadata: {
+        width: 1762,
+        height: 786,
+        duration: 18.93,
+        hasAudio: false,
+      },
+    },
+  ],
+  // 'creators' is defined by user accounts that have been created in the last 3 days
+  creators: [
+    {
+      id: "4G4K-C7THFL4mX-2QPHuYX3Zx4c94VBdoHpi",
+      username: "purpose1900",
+      description: "dolor",
+      created: "1673111101089",
+      paths: {
+        thumb: "https://api.videowebsite/api/user/purpose1900-thumb.png",
+        poster: "https://api.videowebsite/api/user/purpose1900.png",
+      },
+      videos: 10,
+    },
+  ],
+};
+
 // Schema definition
 const typeDefs = `#graphql
-  # A library has a branch and books
-  type User {
-    id: String
-    email: String
-    username: String
-    password: String
-    description: String
-    created: String
-    updated: String
-    videos: [Video!]
-  }
 
-  # A book has a title and author
   type Video {
     id: String
     views: Int
     created: String
-    updated: String
     paths: Paths
     tags: [String]
-    heat: Heat
     metadata: Metadata
   }
 
-  # An author has a name
   type Paths {
-    id: String
     hd: String
     thumb: String
     poster: String
-    created: String
-    updated: String
-    videoId: String
   }
 
   type Tags {
     tag: String
   }
 
-  type Heat {
-    id: String
-    temperature: Int
-    spotlight: Boolean
-    created: String
-    updated: String
-    videoId: String
-  }
-
   type Metadata {
-    id: String
     width: Int
     height: Int
     duration: Float
     hasAudio: Boolean
+  }
+
+  type User {
+    id: String
+    username: String
+    description: String
     created: String
-    updated: String
-    videoId: String
+    videos: Int
+    paths: UserPaths
+  }
+
+  type UserPaths {
+    thumb: String
+    poster: String
+  }
+
+  type FeedData {
+    # trending: [Video]
+    latest: [Video]
+    # spotlight: [Video]
+    creators: [User]
   }
 
   # Queries can fetch a list of libraries
   type Query {
-    getVideoByUser(id: ID!): User
-    getVideoById(id: ID!): Video
+    feedData: FeedData!
   }
-
-  type Mutation {
-    upsertUser(id: ID!, email: String!, username: String!, password: String!, description: String): User
-	}
-
 `;
 
 // Resolver map
 const resolvers = {
   Query: {
-    getVideoByUser: async (parent, args, contextValue, info) => {
-      // Returns a User object that matches the ID supplied on args.id
-      let retVal = await prisma.user.findUnique({
-        where: {
-          id: args.id,
+    async feedData() {
+      let latest = await prisma.video.findMany({
+        take: 4,
+        orderBy: {
+          created: "desc",
         },
-        include: {
-          video: {
-            include: {
-              heat: true,
-              metadata: true,
-              paths: true,
-              tags: true,
-            },
-          },
-        },
-      });
-      return retVal;
-    },
-    getVideoById: async (parent, args, contextValue, info) => {
-      let retVal = await prisma.video.findUnique({
-        where: {
-          id: args.id,
-        },
-        include: {
-          heat: true,
-          metadata: true,
+        select: {
+          id: true,
+          views: true,
+          created: true,
           paths: true,
           tags: true,
+          metadata: true,
         },
       });
-      return retVal;
-    },
-  },
-  User: {
-    videos(parent, args, contextValue, info) {
-      // Filters the videos to only return the videos that are created by that user
-      return parent.video;
-    },
-  },
-  Video: {
-    // Additional resolvers to return paths, tags, heat and metadata for videos
-    paths(parent, args, contextValue, info) {
-      return parent.paths;
-    },
-    // Tags are initially returned from database as IDs e.g.
-    // tags: {
-    //   id: "qiV-FUqxkpiHRBOcuhoo_TaBmO7B9gLt-R8j",
-    //   tag1: "4xiS5EzOiUQv_zjU1LF8wM4V3hpH6JEEWllo",
-    //   tag2: "l1jm1pxHEELfnYAU7FGICIRn9BD2ogA-HEbK",
-    //   tag3: "zi9ZDQps4LosDc8JIdlmAnAl1r0s0oD1HyJD",
-    //   tag4: "u7AlqYdJzoJFlD-s2kH5k6eLUlDKXiRCm7Jy",
-    //   tag5: "fSFrKETwZ2ih357lVbQ97mB4sT8PDNWJ-K4N",
-    //   videoId: "_7SJSPfvbk-uEle0P4RRbnx2ZUVWOimMBgr4",
-    //   created: "1673111092730",
-    //   updated: "1673111092730",
-    // },
-    // getTagsFromJSON is used to return the user friendly names
-    // of the tags
-    tags: async (parent, args, contextValue, info) => {
-      // Apollo caches resolvers so the if statement below checks if the
-      // array has already been created adn returns it
-      if (!Array.isArray(parent.tags)) {
-        let tags = await getTagsFromJSON(parent);
-        parent.tags = tags;
-        return parent.tags;
-      } else {
-        return parent.tags;
+      for await (const video of latest) {
+        let tags = await getTagsFromJSON(video);
+        video.tags = tags;
       }
-    },
-    heat(parent, args, contextValue, info) {
-      return parent.heat;
-    },
-    metadata(parent, args, contextValue, info) {
-      return parent.metadata;
-    },
-  },
-  Mutation: {
-    upsertUser: async (parent, args, contextValue, info) => {
-      let hashPassword = "";
-      try {
-        hashPassword = await argon2.hash(args.password);
-      } catch (e) {
-        console.error(e);
-      }
-      let retVal = await prisma.user.upsert({
-        where: {
-          id: args.id,
+      let creators = await prisma.user.findMany({
+        take: 4,
+        orderBy: {
+          created: "desc",
         },
-        update: {
-          email: args.email,
-          username: args.username,
-          password: hashPassword,
-          description: args.description,
-        },
-        create: {
-          id: nanoid(36),
-          email: args.email,
-          password: hashPassword,
-          username: args.username,
-          description: args.description,
+        select: {
+          id: true,
+          username: true,
+          description: true,
+          created: true,
+          _count: {
+            select: {
+              video: true,
+            },
+          },
+          paths: true,
         },
       });
-      return retVal;
+      creators.forEach((creator) => {
+        creator.videos = creator._count.video;
+      });
+      console.log(creators);
+      return {
+        latest: latest,
+        creators: creators,
+      };
     },
   },
 };
